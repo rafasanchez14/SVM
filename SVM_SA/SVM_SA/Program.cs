@@ -10,24 +10,61 @@ namespace SVM_SA
     {
         static void Main(string[] args)
         {
-            Conectar();
-        }
-
-        public static void Conectar()
-        {
-            //Obtengo puerto
             string port;
-            int iErrror = 0;
             Console.WriteLine("Ingrese puerto");
             port = Console.ReadLine();
+            Menu(port);
+
+        }
+
+        public static void Menu(string port)
+        {
+            Console.WriteLine("");
+            Console.WriteLine("                   Seleccione una opcion");
+            Console.WriteLine("");
+            Console.WriteLine("--1 ------------------- Inicializar Aplicativo");
+            Console.WriteLine("--2 ------------------- Hacer este servidor principal");
+            Console.WriteLine("--3 ------------------- Iniciar el servidor");
+            Console.WriteLine("--3 ------------------- Saber si es principal");
+            string sOpcion = Console.ReadLine();
+
+            switch (sOpcion)
+            {
+                case "1":
+                    Initialize(port);
+                    break;
+                case "2":
+                    MakePrincipal(port);
+                    break;
+                case "3":
+                    Conectar(port);
+                    break;
+                case "4":
+                    if (IsPrincipal(port) == 1)
+                    {
+                        Console.WriteLine("Este servidor es el principal");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Este servidor NO es el principal");
+                    }
+                    break;
+                default:
+                    Console.Clear();
+                    Menu(port);
+                    break;          
+            }
+            Console.ReadLine();
+        }
+
+        private static void Conectar(string port)
+        {
+            //Obtengo puerto
+           
+          
 
             //Creo tabla para almacenar la config
-            iErrror = CreateTable_ConfSVM();
-            Console.WriteLine("CreateTable_ConfSVM" + iErrror.ToString());
-
-
-            Insert_ConfSVM(Convert.ToInt32(port), AddressFamily.InterNetwork.ToString(),DateTime.Now.ToString());
-            Console.WriteLine("Insert_ConfSVM " + iErrror.ToString());
+           
 
             Socket miPrimerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             // paso 2 - creamos el socket
@@ -60,10 +97,11 @@ namespace SVM_SA
 
         }
 
-        public static void MakePrincipal(int port, string ip, string conex)
+        private static void MakePrincipal(string port)
         {
 
                 int result = -1;
+                string ip = GenericFunction.GetLocalIPAddress();
                 var conn = QuerySqlite.sql_con();
                 conn.Open();
 
@@ -76,11 +114,17 @@ namespace SVM_SA
                 {
                     result = cmd.ExecuteNonQuery();
                 }
-                catch (SQLiteException)
+                catch (SQLiteException e)
                 {
-
+                    result = -2;
+                    Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
                 }
-                conn.Close();
+                catch (Exception e)
+                {
+                    result = -2;
+                    Console.WriteLine(e.Message);
+                }
+            conn.Close();
 
 
         }
@@ -88,7 +132,7 @@ namespace SVM_SA
         private static int CreateTable_ConfSVM()
         {
             int result = -1;
-            var conn = QuerySqlite.sql_con();
+            var conn = QuerySqlite.sql_con(true);
             try
             {
                
@@ -104,7 +148,12 @@ namespace SVM_SA
                     result = -2;
                     Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
                 }
-               
+                catch (Exception e)
+                {
+                    result = -2;
+                    Console.WriteLine(e.Message);
+                }
+
             }
             catch (Exception ex)
             {
@@ -116,10 +165,10 @@ namespace SVM_SA
             return result;
         }
 
-        public static int Insert_ConfSVM(int port, string ip, string conex)
+        private static int Insert_ConfSVM(int port)
         {
-            int result = -1;
-
+                int result = -1;
+                string ip = GenericFunction.GetLocalIPAddress();
                 result = -3;
                 var conn = QuerySqlite.sql_con();
                 conn.Open();
@@ -129,7 +178,7 @@ namespace SVM_SA
                 cmd.Parameters.AddWithValue("@Inprincipal", 0);
                 cmd.Parameters.AddWithValue("@InIp", ip);
                 cmd.Parameters.AddWithValue("@InPort", port);
-                cmd.Parameters.AddWithValue("@InConex", conex);
+                cmd.Parameters.AddWithValue("@InConex", DateTime.Now.ToString());
                 try
                 {
                     result = cmd.ExecuteNonQuery();
@@ -139,9 +188,58 @@ namespace SVM_SA
                     result = -2;
                     Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
                 }
-                conn.Close();
+                catch (Exception e)
+                {
+                    result = -2;
+                    Console.WriteLine(e.Message);
+                }
+            conn.Close();
             return result;
         }
 
+        private static void Initialize(string port)
+        {
+            int iErrror = 0;
+            iErrror = CreateTable_ConfSVM();
+            Console.WriteLine("CreateTable_ConfSVM" + iErrror.ToString());
+            Insert_ConfSVM(Convert.ToInt32(port));
+            Console.WriteLine("Insert_ConfSVM " + iErrror.ToString());
+        }
+
+        private static int IsPrincipal(string port)
+        {
+            string ip = GenericFunction.GetLocalIPAddress();
+            var conn = QuerySqlite.sql_con();
+            conn.Open();
+
+            int isPrincipal=0;
+
+            SQLiteCommand cmd = new SQLiteCommand(QuerySqlite.SelectIsPrincipal, conn);
+            cmd.Prepare();
+            cmd.Parameters.AddWithValue("@InIp", ip);
+            cmd.Parameters.AddWithValue("@InPort", port);
+            try
+            {
+                using (SQLiteDataReader rdr = cmd.ExecuteReader())
+                {
+                    while (rdr.Read())
+                    {
+                        isPrincipal = Convert.ToInt16(rdr["isPrincipal"]);
+                    }
+                }
+            }
+            catch (SQLiteException e)
+            {
+
+                Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            conn.Close();
+            return isPrincipal;
+
+        }
     }
 }

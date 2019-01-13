@@ -7,15 +7,15 @@ namespace SVM_SA.Util
 {
     class QuerySqlite
     {
-        public static SQLiteConnection sql_con() {        
+        public static SQLiteConnection sql_con(bool first=false) {  
+            if (first)
+            {
+                SQLiteConnection.CreateFile(GenericFunction.GetExecutingDirectoryName() + "svm.db3");
+            }
             return new SQLiteConnection(@"Data Source ="+ GenericFunction.GetExecutingDirectoryName()+ @"svm.db3;
         Version =3; FailIfMissing=True; Foreign Keys=True;");
         } 
 
-        public static void CreateDb()
-        {
-            SQLiteConnection.CreateFile(GenericFunction.GetExecutingDirectoryName() + "svm.db3");
-        }
 
         public static string CreateTableConf => @"
             CREATE TABLE configSVM (
@@ -35,13 +35,20 @@ namespace SVM_SA.Util
         ";
 
         public static string InsertConf => @"
+       
         INSERT INTO configSVM (id,ip,port,isPrincipal,conn) VALUES 
-        (1
-        ,@InIp
-        ,@InPort
-        ,@Inprincipal
-        ,@InConex);
+                (1
+                ,@InIp
+                ,@InPort
+                ,@Inprincipal
+                ,@InConex);
         ";
 
+        public static string SelectIsPrincipal => @"
+        SELECT isPrincipal 
+        FROM configSVM
+        WHERE ip=@InIp AND 
+        port = @InPort ;
+        ";
     }
 }
