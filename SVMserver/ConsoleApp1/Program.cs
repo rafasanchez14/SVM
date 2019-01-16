@@ -52,7 +52,7 @@ namespace SVM_SA
                 default:
                     Console.Clear();
                     Menu(port);
-                    break;          
+                    break;
             }
             Console.ReadLine();
         }
@@ -60,11 +60,11 @@ namespace SVM_SA
         private static void Conectar(string port)
         {
             //Obtengo puerto
-           
-          
+
+
 
             //Creo tabla para almacenar la config
-           
+
 
             Socket miPrimerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             // paso 2 - creamos el socket
@@ -76,7 +76,7 @@ namespace SVM_SA
                 miPrimerSocket.Bind(miDireccion); // Asociamos el socket a miDireccion
                 miPrimerSocket.Listen(1); // Lo ponemos a escucha
 
-                Console.WriteLine("Escuchando por puerto "+ port+" ...");
+                Console.WriteLine("Escuchando por puerto " + port + " ...");
                 Socket Escuchar = miPrimerSocket.Accept();
                 //creamos el nuevo socket, para comenzar a trabajar con él
                 //La aplicación queda en reposo hasta que el socket se conecte a el cliente
@@ -100,30 +100,30 @@ namespace SVM_SA
         private static void MakePrincipal(string port)
         {
 
-                int result = -1;
-                string ip = GenericFunction.GetLocalIPAddress();
-                var conn = QuerySqlite.sql_con();
-                conn.Open();
+            int result = -1;
+            string ip = GenericFunction.GetLocalIPAddress();
+            var conn = QuerySqlite.sql_con();
+            conn.Open();
 
-                SQLiteCommand cmd = new SQLiteCommand(QuerySqlite.UpdateConfIsPrincipal,conn);
-                cmd.Prepare();
-                cmd.Parameters.AddWithValue("@Inprincipal", 1);
-                cmd.Parameters.AddWithValue("@InIp", ip);
-                cmd.Parameters.AddWithValue("@InPort", port);
-                try
-                {
-                    result = cmd.ExecuteNonQuery();
-                }
-                catch (SQLiteException e)
-                {
-                    result = -2;
-                    Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
-                }
-                catch (Exception e)
-                {
-                    result = -2;
-                    Console.WriteLine(e.Message);
-                }
+            SQLiteCommand cmd = new SQLiteCommand(QuerySqlite.UpdateConfIsPrincipal, conn);
+            cmd.Prepare();
+            cmd.Parameters.AddWithValue("@Inprincipal", 1);
+            cmd.Parameters.AddWithValue("@InIp", ip);
+            cmd.Parameters.AddWithValue("@InPort", port);
+            try
+            {
+                result = cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException e)
+            {
+                result = -2;
+                Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
+            }
+            catch (Exception e)
+            {
+                result = -2;
+                Console.WriteLine(e.Message);
+            }
             conn.Close();
 
 
@@ -135,7 +135,7 @@ namespace SVM_SA
             var conn = QuerySqlite.sql_con(true);
             try
             {
-               
+
                 conn.Open();
 
                 SQLiteCommand createSqlite = new SQLiteCommand(QuerySqlite.CreateTableConf, conn);
@@ -167,32 +167,32 @@ namespace SVM_SA
 
         private static int Insert_ConfSVM(int port)
         {
-                int result = -1;
-                string ip = GenericFunction.GetLocalIPAddress();
-                result = -3;
-                var conn = QuerySqlite.sql_con();
-                conn.Open();
+            int result = -1;
+            string ip = GenericFunction.GetLocalIPAddress();
+            result = -3;
+            var conn = QuerySqlite.sql_con();
+            conn.Open();
 
-                SQLiteCommand cmd = new SQLiteCommand(QuerySqlite.InsertConf, conn);
-                cmd.Prepare();
-                cmd.Parameters.AddWithValue("@Inprincipal", 0);
-                cmd.Parameters.AddWithValue("@InIp", ip);
-                cmd.Parameters.AddWithValue("@InPort", port);
-                cmd.Parameters.AddWithValue("@InConex", DateTime.Now.ToString());
-                try
-                {
-                    result = cmd.ExecuteNonQuery();
-                }
-                catch (SQLiteException e)
-                {
-                    result = -2;
-                    Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
-                }
-                catch (Exception e)
-                {
-                    result = -2;
-                    Console.WriteLine(e.Message);
-                }
+            SQLiteCommand cmd = new SQLiteCommand(QuerySqlite.InsertConf, conn);
+            cmd.Prepare();
+            cmd.Parameters.AddWithValue("@Inprincipal", 0);
+            cmd.Parameters.AddWithValue("@InIp", ip);
+            cmd.Parameters.AddWithValue("@InPort", port);
+            cmd.Parameters.AddWithValue("@InConex", DateTime.Now.ToString());
+            try
+            {
+                result = cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException e)
+            {
+                result = -2;
+                Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
+            }
+            catch (Exception e)
+            {
+                result = -2;
+                Console.WriteLine(e.Message);
+            }
             conn.Close();
             return result;
         }
@@ -212,7 +212,7 @@ namespace SVM_SA
             var conn = QuerySqlite.sql_con();
             conn.Open();
 
-            int isPrincipal=0;
+            int isPrincipal = 0;
 
             SQLiteCommand cmd = new SQLiteCommand(QuerySqlite.SelectIsPrincipal, conn);
             cmd.Prepare();
