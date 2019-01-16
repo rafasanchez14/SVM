@@ -85,25 +85,8 @@ namespace SVM_SA
                 Console.WriteLine("Conectado con exito");
 
                string sOpcion = Receive_from_Client(Escuchar);
+                Services(sOpcion, port, Escuchar);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                /*Aca ponemos todo lo que queramos hacer con el socket, osea antes de 
-                cerrarlo je*/
                 miPrimerSocket.Close(); //Luego lo cerramos
 
             }
@@ -279,5 +262,37 @@ namespace SVM_SA
             Console.WriteLine("respuesta enviada");
         }
 
+
+        private static void  Services (string sOpcion, string port, Socket s)
+        {
+            switch (sOpcion)
+            {
+                case "1":
+                    Commit(s);
+                    break;
+                case "2":
+                    Update(s);
+                    break;
+                case "3":
+                    IsPrincipal(port);
+                    break;          
+                default:
+                    Console.Clear();
+                    Menu(port);
+                    break;
+            }
+        }
+
+        private static void Commit(Socket s)
+        {
+            Send_to_Client("Commit realizado!",s);
+            Console.WriteLine("Commit realizado");
+        }
+
+        private static void Update(Socket s)
+        {
+            Send_to_Client("Update realizado!", s);
+            Console.WriteLine("Update realizado");
+        }
     }
 }

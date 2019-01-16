@@ -63,7 +63,7 @@ namespace ConsoleApp1
 
                 IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
                 IPAddress ipAdress = iphostInfo.AddressList[0];
-                IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 7575);
+                IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);
 
                 Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
