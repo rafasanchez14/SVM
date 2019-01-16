@@ -7,7 +7,9 @@ using System;
 using System;
 using System.Net;
 using System.Net.Sockets;
-
+using System.IO;
+using ConsoleApp1.Model;
+using Newtonsoft.Json;
 
 namespace ConsoleApp1
 {
@@ -20,9 +22,9 @@ namespace ConsoleApp1
 
         static void Main(string[] args)
         {
-            // Connection();
+             Connection();
          
-            Menu();
+           // Menu();
         }
 
 
@@ -65,7 +67,7 @@ namespace ConsoleApp1
                 IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);*/
              IPHostEntry iphostInfo = Dns.GetHostEntry("localhost");
             IPAddress ipAdress = iphostInfo.AddressList[0];
-            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 11000);
+            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);
 
                 Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -77,15 +79,28 @@ namespace ConsoleApp1
                   //  Console.WriteLine("Socket created to {0}", client.RemoteEndPoint.ToString());
                   Console.WriteLine("Conectado");
 
-                    /*while (true)
-                    {
 
-                        string message = Console.ReadLine();
-                        byte[] sendmsg = Encoding.ASCII.GetBytes(message);
-                        int n = client.Send(sendmsg);
-                    }*/
+                //ruta del file
+                        string path = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
 
+                //convierto el file a bytearray
+                        byte[] filebyte = File.ReadAllBytes(path);
+                //luego a base64 para mandarlo al server
+                        string temp_inBase64 = Convert.ToBase64String(filebyte);
 
+                //lleno mi objeto General dto con la data y el id(opcion del menu)
+                //tambien se puede obj.id="hola"
+
+                        var obj = new GeneralDTO { data = temp_inBase64, id = 1 };
+
+                //Convierto a json ese objeto y luego todo eso a bytearray
+                         var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+               
+                //Mando byte array
+                int n =  client.Send(sendmsg);
+
+                //alla hago lo inverso para obtener todo
+                //mandamelo asi por opciones en el id para yo saber que funcion quieres hacer
                 }
                 catch (Exception e)
                 {
@@ -104,7 +119,7 @@ namespace ConsoleApp1
                 // Establish the local endpoint for the socket.
                 IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
                 IPAddress ipAddr = ipHost.AddressList[0];
-                IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, 11000);
+                IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, 9595);
 
                 // Create a TCP socket.
                 Socket client = new Socket(AddressFamily.InterNetwork,
@@ -114,8 +129,8 @@ namespace ConsoleApp1
                 client.Connect(ipEndPoint);
 
                 // There is a text file test.txt located in the root directory.
-                string fileName = "C:\\+test.txt";
-
+                //  string fileName = "C:\\+test.txt";
+                string fileName = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
                 // Send file fileName to remote device
                 Console.WriteLine("Sending {0} to the host.", fileName);
                 client.SendFile(fileName);

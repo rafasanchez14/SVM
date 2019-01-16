@@ -1,4 +1,6 @@
-﻿using SVM_SA.Util;
+﻿using ConsoleApp1.Model;
+using Newtonsoft.Json;
+using SVM_SA.Util;
 using System;
 using System.Data.SQLite;
 using System.IO;
@@ -86,10 +88,11 @@ namespace SVM_SA
                     //La aplicación queda en reposo hasta que el socket se conecte a el cliente
                     //Una vez conectado, la aplicación sigue su camino  
                     Console.WriteLine("Conectado con exito");
-
+                    OReceive_from_Client(Escuchar);
                     string sOpcion = Receive_from_Client(Escuchar);
-                   // Services(sOpcion, port, Escuchar);
-                    Receive_File(Escuchar);
+                    OReceive_from_Client(Escuchar);
+                    Services(sOpcion, port, Escuchar);
+                   // Receive_File(Escuchar);
                 }
               
             }
@@ -249,12 +252,12 @@ namespace SVM_SA
 
         private static string Receive_from_Client(Socket socket)
         {
-            byte[] b = new byte[100];
+            byte[] b = new byte[80];
             string sResp = "";
             int k = socket.Receive(b);
             Console.WriteLine("Recieved...");
             for (int i = 0; i < k; i++)
-                sResp= sResp + Convert.ToChar(b[i]);
+                sResp = sResp + Convert.ToChar(b[i]);
             return sResp;
         }
 
@@ -314,6 +317,18 @@ namespace SVM_SA
             for (int i = 0; i < k; i++)
                 sResp = sResp + Convert.ToChar(b[i]);
             File.WriteAllBytes(@"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\ConsoleApp1\hola.txt", b);
+        }
+
+        private static void OReceive_from_Client(Socket socket)
+        {
+            byte[] b = new byte[80];
+            string sResp = "";
+            int k = socket.Receive(b);
+            Console.WriteLine("Recieved...");
+            for (int i = 0; i < k; i++)
+                sResp = sResp + Convert.ToChar(b[i]);
+
+            var results = JsonConvert.DeserializeObject<GeneralDTO>(sResp);
         }
     }
 }
