@@ -61,13 +61,11 @@ namespace ConsoleApp1
         public static void Connection()
             {
                 byte[] data = new byte[10];
-            /*
+            
                 IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
                 IPAddress ipAdress = iphostInfo.AddressList[0];
-                IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);*/
-             IPHostEntry iphostInfo = Dns.GetHostEntry("localhost");
-            IPAddress ipAdress = iphostInfo.AddressList[0];
-            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);
+                IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);
+          
 
                 Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -81,7 +79,7 @@ namespace ConsoleApp1
 
 
                 //ruta del file
-                        string path = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
+                        string path = @"C:\Users\Usuario\Desktop\svm\test.txt";
 
                 //convierto el file a bytearray
                         byte[] filebyte = File.ReadAllBytes(path);
@@ -130,7 +128,7 @@ namespace ConsoleApp1
 
                 // There is a text file test.txt located in the root directory.
                 //  string fileName = "C:\\+test.txt";
-                string fileName = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
+                string fileName = @"C:\Users\Usuario\Desktop\svm\test.txt";
                 // Send file fileName to remote device
                 Console.WriteLine("Sending {0} to the host.", fileName);
                 client.SendFile(fileName);
