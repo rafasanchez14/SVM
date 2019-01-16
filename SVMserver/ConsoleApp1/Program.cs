@@ -58,7 +58,7 @@ namespace SVM_SA
             Console.ReadLine();
         }
 
-        private static void Conectar(string port)
+        private static void Conectar(string port, bool exit=false)
         {
             //Obtengo puerto
 
@@ -75,20 +75,21 @@ namespace SVM_SA
             {
                 // paso 4
                 miPrimerSocket.Bind(miDireccion); // Asociamos el socket a miDireccion
-                miPrimerSocket.Listen(1); // Lo ponemos a escucha
+                while (true)
+                {            
+                    miPrimerSocket.Listen(1); // Lo ponemos a escucha
 
-                Console.WriteLine("Escuchando por puerto " + port + " ...");
-                Socket Escuchar = miPrimerSocket.Accept();
-                //creamos el nuevo socket, para comenzar a trabajar con él
-                //La aplicación queda en reposo hasta que el socket se conecte a el cliente
-                //Una vez conectado, la aplicación sigue su camino  
-                Console.WriteLine("Conectado con exito");
+                    Console.WriteLine("Escuchando por puerto " + port + " ...");
+                    Socket Escuchar = miPrimerSocket.Accept();
+                    //creamos el nuevo socket, para comenzar a trabajar con él
+                    //La aplicación queda en reposo hasta que el socket se conecte a el cliente
+                    //Una vez conectado, la aplicación sigue su camino  
+                    Console.WriteLine("Conectado con exito");
 
-               string sOpcion = Receive_from_Client(Escuchar);
-                Services(sOpcion, port, Escuchar);
-
-                miPrimerSocket.Close(); //Luego lo cerramos
-
+                    string sOpcion = Receive_from_Client(Escuchar);
+                    Services(sOpcion, port, Escuchar);
+                }
+              
             }
             catch (Exception error)
             {
@@ -274,7 +275,7 @@ namespace SVM_SA
                     Update(s);
                     break;
                 case "3":
-                    IsPrincipal(port);
+                    GetPrincipal(s,port);
                     break;          
                 default:
                     Console.Clear();
@@ -293,6 +294,13 @@ namespace SVM_SA
         {
             Send_to_Client("Update realizado!", s);
             Console.WriteLine("Update realizado");
+        }
+
+        private static void GetPrincipal(Socket s, string port)
+        {
+            string result = IsPrincipal(port).ToString();
+            Send_to_Client(result, s);
+            Console.WriteLine("Es el principal ="+result);
         }
     }
 }
