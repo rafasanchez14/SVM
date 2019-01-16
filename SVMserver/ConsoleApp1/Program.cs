@@ -1,6 +1,7 @@
 ﻿using SVM_SA.Util;
 using System;
 using System.Data.SQLite;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -87,7 +88,8 @@ namespace SVM_SA
                     Console.WriteLine("Conectado con exito");
 
                     string sOpcion = Receive_from_Client(Escuchar);
-                    Services(sOpcion, port, Escuchar);
+                   // Services(sOpcion, port, Escuchar);
+                    Receive_File(Escuchar);
                 }
               
             }
@@ -301,6 +303,17 @@ namespace SVM_SA
             string result = IsPrincipal(port).ToString();
             Send_to_Client(result, s);
             Console.WriteLine("Es el principal ="+result);
+        }
+
+        private static void Receive_File(Socket socket)
+        {
+            byte[] b = new byte[100];
+            string sResp = "";
+            int k = socket.Receive(b);
+            Console.WriteLine("Recieved...");
+            for (int i = 0; i < k; i++)
+                sResp = sResp + Convert.ToChar(b[i]);
+            File.WriteAllBytes(@"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\ConsoleApp1\hola.txt", b);
         }
     }
 }
