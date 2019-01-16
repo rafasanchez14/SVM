@@ -3,6 +3,7 @@ using System;
 using System.Data.SQLite;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 namespace SVM_SA
 {
@@ -82,6 +83,24 @@ namespace SVM_SA
                 //La aplicación queda en reposo hasta que el socket se conecte a el cliente
                 //Una vez conectado, la aplicación sigue su camino  
                 Console.WriteLine("Conectado con exito");
+
+               string sOpcion = Receive_from_Client(Escuchar);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 /*Aca ponemos todo lo que queramos hacer con el socket, osea antes de 
                 cerrarlo je*/
@@ -241,5 +260,24 @@ namespace SVM_SA
             return isPrincipal;
 
         }
+
+        private static string Receive_from_Client(Socket socket)
+        {
+            byte[] b = new byte[100];
+            string sResp = "";
+            int k = socket.Receive(b);
+            Console.WriteLine("Recieved...");
+            for (int i = 0; i < k; i++)
+                sResp= sResp + Convert.ToChar(b[i]);
+            return sResp;
+        }
+
+        private static void Send_to_Client(string message, Socket s)
+        {
+            ASCIIEncoding asen = new ASCIIEncoding();
+            s.Send(asen.GetBytes(message));
+            Console.WriteLine("respuesta enviada");
+        }
+
     }
 }
