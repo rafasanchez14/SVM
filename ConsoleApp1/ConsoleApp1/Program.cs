@@ -54,6 +54,7 @@ namespace ConsoleApp1
                     Menu();
                     break;
             }
+
             Console.ReadLine();
         }
 
@@ -79,7 +80,7 @@ namespace ConsoleApp1
 
 
                 //ruta del file
-                        string path = @"C:\Users\Usuario\Desktop\svm\test.txt";
+                        string path = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
 
                 //convierto el file a bytearray
                         byte[] filebyte = File.ReadAllBytes(path);
@@ -109,6 +110,8 @@ namespace ConsoleApp1
                 Console.ReadKey();
 
             }
+
+
         public static void Commit()
         {
 
@@ -128,7 +131,7 @@ namespace ConsoleApp1
 
                 // There is a text file test.txt located in the root directory.
                 //  string fileName = "C:\\+test.txt";
-                string fileName = @"C:\Users\Usuario\Desktop\svm\test.txt";
+                string fileName = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
                 // Send file fileName to remote device
                 Console.WriteLine("Sending {0} to the host.", fileName);
                 client.SendFile(fileName);

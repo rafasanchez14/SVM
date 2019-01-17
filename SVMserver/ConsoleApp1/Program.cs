@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using SVM_SA.Util;
 using System;
+using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Net;
@@ -12,11 +13,14 @@ namespace SVM_SA
 {
     class Program
     {
+        private static int staPort = 80;
+
         static void Main(string[] args)
         {
             string port;
             Console.WriteLine("Ingrese puerto");
             port = Console.ReadLine();
+            staPort = Convert.ToInt32(port);
             Menu(port);
 
         }
@@ -61,7 +65,7 @@ namespace SVM_SA
             Console.ReadLine();
         }
 
-        private static void Conectar(string port, bool exit=false)
+        private static void Conectar(string port, bool exit = false)
         {
             //Obtengo puerto
 
@@ -79,22 +83,30 @@ namespace SVM_SA
                 // paso 4
                 miPrimerSocket.Bind(miDireccion); // Asociamos el socket a miDireccion
                 while (true)
-                {            
+                {
                     miPrimerSocket.Listen(1); // Lo ponemos a escucha
 
                     Console.WriteLine("Escuchando por puerto " + port + " ...");
                     Socket Escuchar = miPrimerSocket.Accept();
-                    //creamos el nuevo socket, para comenzar a trabajar con él
-                    //La aplicación queda en reposo hasta que el socket se conecte a el cliente
-                    //Una vez conectado, la aplicación sigue su camino  
                     Console.WriteLine("Conectado con exito");
-                    OReceive_from_Client(Escuchar);
-                    string sOpcion = Receive_from_Client(Escuchar);
-                    OReceive_from_Client(Escuchar);
-                    Services(sOpcion, port, Escuchar);
-                   // Receive_File(Escuchar);
+
+
+                    //Verifico la opcion enviada
+                    var oData = OReceive_from_Client(Escuchar);
+
+                    switch (oData.id)
+                    {
+                        case 1:
+                            Commit(oData);
+                            break;
+
+                        default:
+                            Console.Clear();
+                            break;
+                    }
+
                 }
-              
+
             }
             catch (Exception error)
             {
@@ -269,31 +281,33 @@ namespace SVM_SA
         }
 
 
-        private static void  Services (string sOpcion, string port, Socket s)
+        private static void Commit(GeneralDTO odata)
         {
-            switch (sOpcion)
-            {
-                case "1":
-                    Commit(s);
-                    break;
-                case "2":
-                    Update(s);
-                    break;
-                case "3":
-                    GetPrincipal(s,port);
-                    break;          
-                default:
-                    Console.Clear();
-                    Menu(port);
-                    break;
-            }
+            ConvertFile(odata.data);
         }
 
-        private static void Commit(Socket s)
+        private static void ConvertFile(string file, string name = "SVM")
         {
-            Send_to_Client("Commit realizado!",s);
-            Console.WriteLine("Commit realizado");
+            byte[] sfile = Convert.FromBase64String(file);
+            string hh = GenericFunction.GetExecutingDirectoryName() + name + DateTime.Now.ToString("yyyyMMddHHmmss");
+            File.WriteAllBytes(hh, sfile);
+
+            if (IsPrincipal(staPort.ToString()) == 1)
+            {
+                var ips = ipList();
+
+                ips.ForEach(x =>
+                {
+                    IPAddress address = IPAddress.Parse(x);
+                    sendToSa(staPort, hh, address);
+                });
+
+            }
+
+
+
         }
+
 
         private static void Update(Socket s)
         {
@@ -305,7 +319,7 @@ namespace SVM_SA
         {
             string result = IsPrincipal(port).ToString();
             Send_to_Client(result, s);
-            Console.WriteLine("Es el principal ="+result);
+            Console.WriteLine("Es el principal =" + result);
         }
 
         private static void Receive_File(Socket socket)
@@ -319,7 +333,7 @@ namespace SVM_SA
             File.WriteAllBytes(@"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\ConsoleApp1\hola.txt", b);
         }
 
-        private static void OReceive_from_Client(Socket socket)
+        private static GeneralDTO OReceive_from_Client(Socket socket)
         {
             byte[] b = new byte[80];
             string sResp = "";
@@ -329,6 +343,51 @@ namespace SVM_SA
                 sResp = sResp + Convert.ToChar(b[i]);
 
             var results = JsonConvert.DeserializeObject<GeneralDTO>(sResp);
+
+            return results;
+        }
+
+
+        private static void sendToSa(int port, string spath, IPAddress iPAddress)
+        {
+            byte[] data = new byte[10];
+            IPEndPoint ipEndpoint = new IPEndPoint(iPAddress, port);
+            Socket client = new Socket(iPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                client.Connect(ipEndpoint);
+                byte[] filebyte = File.ReadAllBytes(spath);
+                string temp_inBase64 = Convert.ToBase64String(filebyte);
+                var obj = new GeneralDTO { data = temp_inBase64, id = 1 };
+                var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+                int n = client.Send(sendmsg);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
+
+
+        private static List<string> ipList()
+        {
+            List<string> ipList = new List<string>();
+            int counter = 0;
+            string line;
+
+            // Read the file and display it line by line.  
+            StreamReader file = new StreamReader(GenericFunction.GetExecutingDirectoryName() + @"iplist.txt");
+            while ((line = file.ReadLine()) != null)
+            {
+                ipList.Add(line);
+
+                
+                Console.WriteLine("There were {0} lines.", counter);
+                // Suspend the screen.  
+                Console.ReadLine();
+            }
+            file.Close();
+            return ipList;
         }
     }
 }
