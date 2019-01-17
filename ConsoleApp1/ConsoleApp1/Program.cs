@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using SVM_SA.Util;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -13,7 +14,8 @@ namespace ConsoleApp1
     public class Cliente
     {
         private static int staPort = 80;
-
+        private static IPAddress iPAddress;
+        private static int trys = 0;
         public Cliente()
         {
         }
@@ -27,6 +29,7 @@ namespace ConsoleApp1
 
         public static void Menu()
         {
+            
             Console.WriteLine("Elegir puerto");
             string Port = Console.ReadLine();
             staPort = Convert.ToInt32(Port);
@@ -62,41 +65,56 @@ namespace ConsoleApp1
 
         public static void Commit()
         {
-            Console.WriteLine("Opcion elegida commit");
 
-            Console.WriteLine("En caso de no habrlo hecho Coloque su archivo en la carpeta Files");
+            try
+            {
+                Get_Ip();
+                Console.WriteLine("Opcion elegida commit");
 
-            Console.WriteLine("Introduzca el nombre de su archivo(incluyendo extension)");
+                Console.WriteLine("En caso de no habrlo hecho Coloque su archivo en la carpeta Files");
 
-            string sNameFile = Console.ReadLine();
+                Console.WriteLine("Introduzca el nombre de su archivo(incluyendo extension)");
 
-
-            byte[] data = new byte[10];
-
-            IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            IPAddress ipAdress = iphostInfo.AddressList[0];
-            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, staPort);
-            Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            client.Connect(ipEndpoint);
-
-            string  sNameFiledate = DateTime.Now.ToString("yyyyMMddHHmmss") +sNameFile;
-            string path = GenericFunction.GetExecutingDirectoryName() + sNameFile;
-            Console.WriteLine("Ruta seleccionada: " + path);
+                string sNameFile = Console.ReadLine();
 
 
-            byte[] filebyte = File.ReadAllBytes(path);
+                byte[] data = new byte[10];
+                IPEndPoint ipEndpoint = new IPEndPoint(iPAddress, staPort);
+                Socket client = new Socket(iPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            string temp_inBase64 = Convert.ToBase64String(filebyte);
-            var obj = new GeneralDTO { data = temp_inBase64, id = 1, nameFile = sNameFiledate};
-            var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+                client.Connect(ipEndpoint);
 
-            Console.WriteLine("Presione una tecla para Confirmar commit");
-            Console.ReadKey();
+                string sNameFiledate = DateTime.Now.ToString("yyyyMMddHHmmss") + sNameFile;
+                string path = GenericFunction.GetExecutingDirectoryName() + sNameFile;
+                Console.WriteLine("Ruta seleccionada: " + path);
 
-            int n = client.Send(sendmsg);
-            Console.WriteLine("Transmission end.");
-            Console.ReadKey();
+
+                byte[] filebyte = File.ReadAllBytes(path);
+
+                string temp_inBase64 = Convert.ToBase64String(filebyte);
+                var obj = new GeneralDTO { data = temp_inBase64, id = 1, nameFile = sNameFiledate };
+                var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+
+                Console.WriteLine("Presione una tecla para Confirmar commit");
+                Console.ReadKey();
+
+                int n = client.Send(sendmsg);
+                Console.WriteLine("Transmission end.");
+                Console.ReadKey();
+            }
+            catch (SocketException ex)
+            {
+
+                Commit();
+                Console.WriteLine("Intento otro.");
+            }
+            catch (Exception ex)
+            {
+                Commit();
+                Console.WriteLine("exec otro.");
+                throw;
+            }
+
         }
 
 
@@ -108,10 +126,8 @@ namespace ConsoleApp1
 
             byte[] data = new byte[10];
 
-            IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            IPAddress ipAdress = iphostInfo.AddressList[0];
-            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, staPort);
-            Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            IPEndPoint ipEndpoint = new IPEndPoint(iPAddress, staPort);
+            Socket client = new Socket(iPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             client.Connect(ipEndpoint);
 
@@ -148,6 +164,39 @@ namespace ConsoleApp1
 
             return results;
         }
+
+        private static List<string> ipList()
+        {
+            List<string> ipList = new List<string>();
+            int counter = 0;
+            string line;
+
+            // Read the file and display it line by line.  
+            StreamReader file = new StreamReader(GenericFunction.GetExecutingDirectoryNameIp() + @"iplist.txt");
+            while ((line = file.ReadLine()) != null)
+            {
+                ipList.Add(line);
+
+            }
+            file.Close();
+            return ipList;
+        }
+
+        private static void Get_Ip()
+        {
+            var iplist = ipList();
+            if (trys > iplist.Count-1)
+            {
+                trys = 0;
+            }
+            else
+            {
+                iPAddress = IPAddress.Parse(iplist[trys]);
+                trys = trys + 1;
+            }
+            
+        }
+
     }
 }
 

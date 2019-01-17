@@ -15,6 +15,11 @@ namespace SVM_SA.Util
             var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
             return new FileInfo(location.AbsolutePath).Directory.FullName+@"\Files\";
         }
+        public static string GetExecutingDirectoryNameIp()
+        {
+            var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
+            return new FileInfo(location.AbsolutePath).Directory.FullName + @"\";
+        }
 
         public static string GetLocalIPAddress()
         {
