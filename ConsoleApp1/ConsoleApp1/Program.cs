@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 
 namespace ConsoleApp1
@@ -23,16 +24,12 @@ namespace ConsoleApp1
         static void Main(string[] args)
         {
 
-            Menu();
+            MenuFunc();
         }
 
 
         public static void Menu()
-        {
-            
-            Console.WriteLine("Elegir puerto");
-            string Port = Console.ReadLine();
-            staPort = Convert.ToInt32(Port);
+        {          
             Console.WriteLine("");
             Console.WriteLine("                   Seleccione una opcion");
             Console.WriteLine("");
@@ -58,10 +55,18 @@ namespace ConsoleApp1
                     break;
             }
 
+            Console.Clear();
+            Menu();
             Console.ReadLine();
         }
 
-
+        public static void MenuFunc()
+        {
+            Console.WriteLine("Elegir puerto");
+            string Port = Console.ReadLine();
+            staPort = Convert.ToInt32(Port);
+            Menu();
+        }
 
         public static void Commit()
         {
@@ -71,7 +76,7 @@ namespace ConsoleApp1
                 Get_Ip();
                 Console.WriteLine("Opcion elegida commit");
 
-                Console.WriteLine("En caso de no habrlo hecho Coloque su archivo en la carpeta Files");
+                Console.WriteLine("En caso de no haberlo hecho Coloque su archivo en la carpeta Files");
 
                 Console.WriteLine("Introduzca el nombre de su archivo(incluyendo extension)");
 
@@ -99,20 +104,21 @@ namespace ConsoleApp1
                 Console.ReadKey();
 
                 int n = client.Send(sendmsg);
-                Console.WriteLine("Transmission end.");
-                Console.ReadKey();
+                Console.WriteLine("Commit enviado");
+                SVMLogger.Write(GenericFunction.GetLocalIPAddress() +"  Ha realizado un commit", "SVMActivity");
             }
             catch (SocketException ex)
             {
-
+                SVMLogger.Write("Ocurrio una exception controlada Socket: " + ex.Message);
+                Console.WriteLine("Servidor caido eligiendo otro...");
                 Commit();
-                Console.WriteLine("Intento otro.");
+               
             }
             catch (Exception ex)
             {
                 Commit();
-                Console.WriteLine("exec otro.");
-                throw;
+                SVMLogger.Write("Ocurrio una exception: " + ex.Message + MethodBase.GetCurrentMethod());
+                
             }
 
         }
@@ -120,35 +126,54 @@ namespace ConsoleApp1
 
         public static void Update()
         {
-            Console.WriteLine("Introduzca el nombre de su archivo(incluyendo extension)");
+            try
+            {
+                Get_Ip();
+                Console.WriteLine("Introduzca el nombre de su archivo(incluyendo extension)");
 
-            string sNameFile = Console.ReadLine();
+                string sNameFile = Console.ReadLine();
 
-            byte[] data = new byte[10];
+                byte[] data = new byte[10];
 
-            IPEndPoint ipEndpoint = new IPEndPoint(iPAddress, staPort);
-            Socket client = new Socket(iPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                IPEndPoint ipEndpoint = new IPEndPoint(iPAddress, staPort);
+                Socket client = new Socket(iPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            client.Connect(ipEndpoint);
+                client.Connect(ipEndpoint);
 
-            var obj = new GeneralDTO { data = "aaaaa", id = 2, nameFile = sNameFile};
-            var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
-            int n = client.Send(sendmsg);
-            client.Close();
-            //Empiezo a escuchar
+                var obj = new GeneralDTO { data = "aaaaa", id = 2, nameFile = sNameFile };
+                var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+                int n = client.Send(sendmsg);
+                client.Close();
+                //Empiezo a escuchar
 
-            Socket miPrimerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            IPEndPoint miDireccion = new IPEndPoint(IPAddress.Any, Convert.ToInt32(staPort)+1);
-            miPrimerSocket.Bind(miDireccion);
-            miPrimerSocket.Listen(1);
-            Console.WriteLine("Escuchando por puerto " + staPort + " ...");
-            Socket Escuchar = miPrimerSocket.Accept();
-            var oData = OReceive_from_Client(Escuchar);
-            Console.WriteLine(oData.data);
+                Socket miPrimerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                IPEndPoint miDireccion = new IPEndPoint(IPAddress.Any, Convert.ToInt32(staPort) + 1);
+                miPrimerSocket.Bind(miDireccion);
+                miPrimerSocket.Listen(1);
 
-            byte[] sfile = Convert.FromBase64String(oData.data);
-            string hh = GenericFunction.GetExecutingDirectoryName() + oData.nameFile;
-            File.WriteAllBytes(hh, sfile);
+                Console.WriteLine("Escuchando por puerto " + staPort + " ...");
+                Socket Escuchar = miPrimerSocket.Accept();
+                var oData = OReceive_from_Client(Escuchar);
+                Console.WriteLine("Archivo recibido "+oData.data);
+
+                byte[] sfile = Convert.FromBase64String(oData.data);
+                string hh = GenericFunction.GetExecutingDirectoryName() + oData.nameFile;
+                File.WriteAllBytes(hh, sfile);
+                SVMLogger.Write(GenericFunction.GetLocalIPAddress() + "  Ha realizado un update", "SVMActivity");
+                Console.ReadKey();
+            }
+            catch (SocketException ex)
+            {
+                SVMLogger.Write("Ocurrio una exception controlada Socket: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                SVMLogger.Write("Ocurrio una exception: " + ex.Message + MethodBase.GetCurrentMethod());
+
+            }
+
+
+
         }
 
         private static GeneralDTO OReceive_from_Client(Socket socket)
@@ -156,47 +181,60 @@ namespace ConsoleApp1
             byte[] b = new byte[1000];
             string sResp = "";
             int k = socket.Receive(b);
-            Console.WriteLine("Recieved...");
             for (int i = 0; i < k; i++)
                 sResp = sResp + Convert.ToChar(b[i]);
-
             var results = JsonConvert.DeserializeObject<GeneralDTO>(sResp);
-
             return results;
         }
 
         private static List<string> ipList()
         {
             List<string> ipList = new List<string>();
-            int counter = 0;
-            string line;
-
-            // Read the file and display it line by line.  
             StreamReader file = new StreamReader(GenericFunction.GetExecutingDirectoryNameIp() + @"iplist.txt");
-            while ((line = file.ReadLine()) != null)
+            string line;
+            try
             {
-                ipList.Add(line);
+                // Read the file and display it line by line.  
+                 while ((line = file.ReadLine()) != null)
+                 {
+                    ipList.Add(line);
 
+                 }
             }
+            catch (Exception ex)
+            {
+                SVMLogger.Write("Ocurrio una exception: " + ex.Message + MethodBase.GetCurrentMethod());
+            }
+            
             file.Close();
             return ipList;
         }
 
         private static void Get_Ip()
         {
-            var iplist = ipList();
-            if (trys > iplist.Count-1)
+            try
             {
-                trys = 0;
+                var iplist = ipList();
+                if (trys > iplist.Count - 1)
+                {
+                    trys = 0;
+                }
+                else
+                {
+                    iPAddress = IPAddress.Parse(iplist[trys]);
+                    trys = trys + 1;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                iPAddress = IPAddress.Parse(iplist[trys]);
-                trys = trys + 1;
+                SVMLogger.Write("Ocurrio una exception: " + ex.Message + MethodBase.GetCurrentMethod());
             }
-            
+
+
         }
 
+
+        
     }
 }
 

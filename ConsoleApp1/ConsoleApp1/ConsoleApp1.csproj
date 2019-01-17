@@ -51,6 +51,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Util\GenericFunction.cs" />
     <Compile Include="Util\QuerySqlite.cs" />
+    <Compile Include="Util\SVMLogger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

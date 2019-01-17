@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 
 namespace SVM_SA
@@ -15,6 +16,8 @@ namespace SVM_SA
     class Program
     {
         private static int staPort = 80;
+        private static int trys = 0;
+        private static IPAddress iPAddress;
 
         static void Main(string[] args)
         {
@@ -34,7 +37,7 @@ namespace SVM_SA
             Console.WriteLine("--1 ------------------- Inicializar Aplicativo");
             Console.WriteLine("--2 ------------------- Hacer este servidor principal");
             Console.WriteLine("--3 ------------------- Iniciar el servidor");
-            Console.WriteLine("--3 ------------------- Saber si es principal");
+            Console.WriteLine("--4 ------------------- Saber si es principal");
             string sOpcion = Console.ReadLine();
 
             switch (sOpcion)
@@ -68,11 +71,9 @@ namespace SVM_SA
 
         private static void Conectar(string port, bool exit = false)
         {
-
-
-
+            Get_Ip();
             Socket miPrimerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            IPEndPoint miDireccion = new IPEndPoint(IPAddress.Any, Convert.ToInt32(port));       
+            IPEndPoint miDireccion = new IPEndPoint(iPAddress, Convert.ToInt32(port));       
             try
             {
                 // paso 4
@@ -106,9 +107,12 @@ namespace SVM_SA
                 }
 
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Error: {0}", error.ToString());
+                Console.WriteLine("El servidor: "+iPAddress.ToString()+ " se encuentra fuera de servicio");
+                Console.WriteLine("Asignando otro servidor..");
+                SVMLogger.Write("Ocurrio una exception: " + ex.Message + MethodBase.GetCurrentMethod());
+                Conectar(port);
             }
             Console.WriteLine("Presione cualquier tecla para terminar");
             Console.ReadLine();
@@ -135,12 +139,14 @@ namespace SVM_SA
             catch (SQLiteException e)
             {
                 result = -2;
-                Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
+                SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+
             }
             catch (Exception e)
             {
                 result = -2;
-                Console.WriteLine(e.Message);
+                SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+
             }
             conn.Close();
 
@@ -164,12 +170,14 @@ namespace SVM_SA
                 catch (SQLiteException e)
                 {
                     result = -2;
-                    Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
+                    SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+
                 }
                 catch (Exception e)
                 {
                     result = -2;
-                    Console.WriteLine(e.Message);
+                    SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+
                 }
 
             }
@@ -177,7 +185,8 @@ namespace SVM_SA
             {
 
                 result = -2;
-                Console.WriteLine(ex.Message);
+                SVMLogger.Write("Ocurrio una exception: " + ex.Message + MethodBase.GetCurrentMethod());
+
             }
             conn.Close();
             return result;
@@ -204,12 +213,14 @@ namespace SVM_SA
             catch (SQLiteException e)
             {
                 result = -2;
-                Console.WriteLine(e.Message + "  " + e.ErrorCode.ToString());
+                SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+
             }
             catch (Exception e)
             {
                 result = -2;
-                Console.WriteLine(e.Message);
+                SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+
             }
             conn.Close();
             return result;
@@ -281,26 +292,44 @@ namespace SVM_SA
 
         private static void Commit(GeneralDTO odata)
         {
-            ConvertFile(odata.data,odata.nameFile);
+            try
+            {
+                ConvertFile(odata.data, odata.nameFile);
+            }
+            catch (Exception e)
+            {
+                SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+
+            }
+           
         }
 
         private static void ConvertFile(string file, string name)
         {
-            byte[] sfile = Convert.FromBase64String(file);
-            string hh = GenericFunction.GetExecutingDirectoryName() + name;
-            File.WriteAllBytes(hh, sfile);
-
-            if (IsPrincipal(staPort.ToString()) == 1)
+            try
             {
-                var ips = ipList();
+                byte[] sfile = Convert.FromBase64String(file);
+                string hh = GenericFunction.GetExecutingDirectoryName() + name;
+                File.WriteAllBytes(hh, sfile);
 
-                ips.ForEach(x =>
+                if (IsPrincipal(staPort.ToString()) == 1)
                 {
-                    IPAddress address = IPAddress.Parse(x);
-                    sendToSa(staPort, hh, address);
-                });
+                    var ips = ipList();
 
+                    ips.ForEach(x =>
+                    {
+                        IPAddress address = IPAddress.Parse(x);
+                        sendToSa(staPort, hh, address);
+                    });
+
+                }
             }
+            catch (Exception e)
+            {
+
+                SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+            }
+
 
 
 
@@ -399,17 +428,27 @@ namespace SVM_SA
         private static List<string> ipList()
         {
             List<string> ipList = new List<string>();
-            int counter = 0;
             string line;
 
             // Read the file and display it line by line.  
             StreamReader file = new StreamReader(GenericFunction.GetExecutingDirectoryNameIp() + @"iplist.txt");
-            while ((line = file.ReadLine()) != null)
+
+            try
             {
-                ipList.Add(line);
+                while ((line = file.ReadLine()) != null)
+                {
+                    ipList.Add(line);
+
+                }
+                file.Close();
+            }
+            catch (Exception e)
+            {
+
+                 SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
 
             }
-            file.Close();
+           
             return ipList;
         }
 
@@ -417,15 +456,43 @@ namespace SVM_SA
         {
             var lrecents = new List<long>();
             string sResult = "";
-
-            foreach (string s in Directory.GetFiles(GenericFunction.GetExecutingDirectoryName(), "*.txt").Select(Path.GetFileName))
+            try
             {
-                lrecents.Add(Convert.ToInt64(s.Replace(odata.nameFile,"")));
-            }
+                foreach (string s in Directory.GetFiles(GenericFunction.GetExecutingDirectoryName(), "*.txt").Select(Path.GetFileName))
+                {
+                    lrecents.Add(Convert.ToInt64(s.Replace(odata.nameFile, "")));
+                }
 
-            sResult =GenericFunction.GetExecutingDirectoryName()+ lrecents.Max().ToString() + odata.nameFile;
+                sResult = GenericFunction.GetExecutingDirectoryName() + lrecents.Max().ToString() + odata.nameFile;
+            }
+            catch (Exception e)
+            {
+                 SVMLogger.Write("Ocurrio una exception: " + e.Message + MethodBase.GetCurrentMethod());
+            }                  
             return sResult;
         }
 
+        private static void Get_Ip()
+        {
+            try
+            {
+                var iplist = ipList();
+                if (trys > iplist.Count - 1)
+                {
+                    trys = 0;
+                }
+                else
+                {
+                    iPAddress = IPAddress.Parse(iplist[trys]);
+                    trys = trys + 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                SVMLogger.Write("Ocurrio una exception: " + ex.Message + MethodBase.GetCurrentMethod());
+            }
+
+
+        }
     }
 }
