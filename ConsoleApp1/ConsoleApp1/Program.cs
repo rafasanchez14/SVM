@@ -12,6 +12,8 @@ namespace ConsoleApp1
 
     public class Cliente
     {
+        private static int staPort = 80;
+
         public Cliente()
         {
         }
@@ -25,6 +27,9 @@ namespace ConsoleApp1
 
         public static void Menu()
         {
+            Console.WriteLine("Elegir puerto");
+            string Port = Console.ReadLine();
+            staPort = Convert.ToInt32(Port);
             Console.WriteLine("");
             Console.WriteLine("                   Seleccione una opcion");
             Console.WriteLine("");
@@ -40,7 +45,7 @@ namespace ConsoleApp1
 
                     break;
                 case "2":
-
+                    Update();
                     break;
 
 
@@ -70,7 +75,7 @@ namespace ConsoleApp1
 
             IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
             IPAddress ipAdress = iphostInfo.AddressList[0];
-            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);
+            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, staPort);
             Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             client.Connect(ipEndpoint);
@@ -94,6 +99,55 @@ namespace ConsoleApp1
             Console.ReadKey();
         }
 
+
+        public static void Update()
+        {
+            Console.WriteLine("Introduzca el nombre de su archivo(incluyendo extension)");
+
+            string sNameFile = Console.ReadLine();
+
+            byte[] data = new byte[10];
+
+            IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            IPAddress ipAdress = iphostInfo.AddressList[0];
+            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, staPort);
+            Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            client.Connect(ipEndpoint);
+
+            var obj = new GeneralDTO { data = "aaaaa", id = 2, nameFile = sNameFile};
+            var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+            int n = client.Send(sendmsg);
+            client.Close();
+            //Empiezo a escuchar
+
+            Socket miPrimerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            IPEndPoint miDireccion = new IPEndPoint(IPAddress.Any, Convert.ToInt32(staPort)+1);
+            miPrimerSocket.Bind(miDireccion);
+            miPrimerSocket.Listen(1);
+            Console.WriteLine("Escuchando por puerto " + staPort + " ...");
+            Socket Escuchar = miPrimerSocket.Accept();
+            var oData = OReceive_from_Client(Escuchar);
+            Console.WriteLine(oData.data);
+
+            byte[] sfile = Convert.FromBase64String(oData.data);
+            string hh = GenericFunction.GetExecutingDirectoryName() + oData.nameFile;
+            File.WriteAllBytes(hh, sfile);
+        }
+
+        private static GeneralDTO OReceive_from_Client(Socket socket)
+        {
+            byte[] b = new byte[1000];
+            string sResp = "";
+            int k = socket.Receive(b);
+            Console.WriteLine("Recieved...");
+            for (int i = 0; i < k; i++)
+                sResp = sResp + Convert.ToChar(b[i]);
+
+            var results = JsonConvert.DeserializeObject<GeneralDTO>(sResp);
+
+            return results;
+        }
     }
 }
 

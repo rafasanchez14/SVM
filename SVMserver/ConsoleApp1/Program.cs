@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -67,17 +68,11 @@ namespace SVM_SA
 
         private static void Conectar(string port, bool exit = false)
         {
-            //Obtengo puerto
 
-
-
-            //Creo tabla para almacenar la config
 
 
             Socket miPrimerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            // paso 2 - creamos el socket
-            IPEndPoint miDireccion = new IPEndPoint(IPAddress.Any, Convert.ToInt32(port));
-            //paso 3 -IPAddress.Any significa que va a escuchar al cliente en toda la red 
+            IPEndPoint miDireccion = new IPEndPoint(IPAddress.Any, Convert.ToInt32(port));       
             try
             {
                 // paso 4
@@ -98,6 +93,9 @@ namespace SVM_SA
                     {
                         case 1:
                             Commit(oData);
+                            break;
+                        case 2:
+                            Update(oData);
                             break;
 
                         default:
@@ -309,11 +307,18 @@ namespace SVM_SA
         }
 
 
-        private static void Update(Socket s)
+        private static void Update(GeneralDTO odata)
         {
-            Send_to_Client("Update realizado!", s);
-            Console.WriteLine("Update realizado");
+            var ips = ipList();
+
+            ips.ForEach(x =>
+            {
+                IPAddress address = IPAddress.Parse(x);
+                sendToClient(staPort, getLastVersion(odata), address,odata.nameFile);
+            });
+
         }
+
 
         private static void GetPrincipal(Socket s, string port)
         {
@@ -366,8 +371,30 @@ namespace SVM_SA
             {
                 Console.WriteLine(e.ToString());
             }
+            client.Close();
         }
 
+
+        private static void sendToClient(int port, string spath, IPAddress iPAddress, string sname)
+        {
+            byte[] data = new byte[10];
+            IPEndPoint ipEndpoint = new IPEndPoint(iPAddress, port+1);
+            Socket client = new Socket(iPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                client.Connect(ipEndpoint);
+                byte[] filebyte = File.ReadAllBytes(spath);
+                string temp_inBase64 = Convert.ToBase64String(filebyte);
+                var obj = new GeneralDTO { data = temp_inBase64, id = 2, nameFile= sname};
+                var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+                int n = client.Send(sendmsg);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            client.Close();
+        }
 
         private static List<string> ipList()
         {
@@ -376,7 +403,7 @@ namespace SVM_SA
             string line;
 
             // Read the file and display it line by line.  
-            StreamReader file = new StreamReader(GenericFunction.GetExecutingDirectoryName() + @"iplist.txt");
+            StreamReader file = new StreamReader(GenericFunction.GetExecutingDirectoryNameIp() + @"iplist.txt");
             while ((line = file.ReadLine()) != null)
             {
                 ipList.Add(line);
@@ -389,5 +416,20 @@ namespace SVM_SA
             file.Close();
             return ipList;
         }
+
+        private static string getLastVersion(GeneralDTO odata)
+        {
+            var lrecents = new List<long>();
+            string sResult = "";
+
+            foreach (string s in Directory.GetFiles(GenericFunction.GetExecutingDirectoryName(), "*.txt").Select(Path.GetFileName))
+            {
+                lrecents.Add(Convert.ToInt64(s.Replace(odata.nameFile,"")));
+            }
+
+            sResult = lrecents.Max().ToString() + odata.nameFile;
+            return sResult;
+        }
+
     }
 }
