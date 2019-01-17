@@ -283,13 +283,13 @@ namespace SVM_SA
 
         private static void Commit(GeneralDTO odata)
         {
-            ConvertFile(odata.data);
+            ConvertFile(odata.data,odata.nameFile);
         }
 
-        private static void ConvertFile(string file, string name = "SVM")
+        private static void ConvertFile(string file, string name)
         {
             byte[] sfile = Convert.FromBase64String(file);
-            string hh = GenericFunction.GetExecutingDirectoryName() + name + DateTime.Now.ToString("yyyyMMddHHmmss");
+            string hh = GenericFunction.GetExecutingDirectoryName() + name;
             File.WriteAllBytes(hh, sfile);
 
             if (IsPrincipal(staPort.ToString()) == 1)
@@ -335,7 +335,7 @@ namespace SVM_SA
 
         private static GeneralDTO OReceive_from_Client(Socket socket)
         {
-            byte[] b = new byte[80];
+            byte[] b = new byte[1000];
             string sResp = "";
             int k = socket.Receive(b);
             Console.WriteLine("Recieved...");

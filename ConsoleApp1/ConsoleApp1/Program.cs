@@ -1,30 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ConsoleApp1.Model;
+using Newtonsoft.Json;
+using SVM_SA.Util;
 using System;
-using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.IO;
-using ConsoleApp1.Model;
-using Newtonsoft.Json;
+using System.Text;
 
 namespace ConsoleApp1
 {
-  
-        public class Cliente
+
+    public class Cliente
+    {
+        public Cliente()
         {
-            public Cliente()
-            {
-            }
+        }
 
         static void Main(string[] args)
         {
-             Connection();
-         
-           // Menu();
+
+            Menu();
         }
 
 
@@ -45,10 +40,10 @@ namespace ConsoleApp1
 
                     break;
                 case "2":
-                  
+
                     break;
-                              
-            
+
+
                 default:
                     Console.Clear();
                     Menu();
@@ -59,100 +54,46 @@ namespace ConsoleApp1
         }
 
 
-        public static void Connection()
-            {
-                byte[] data = new byte[10];
-            
-                IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
-                IPAddress ipAdress = iphostInfo.AddressList[0];
-                IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);
-          
-
-                Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-
-                try
-                {
-
-                    client.Connect(ipEndpoint);
-                  //  Console.WriteLine("Socket created to {0}", client.RemoteEndPoint.ToString());
-                  Console.WriteLine("Conectado");
-
-
-                //ruta del file
-                        string path = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
-
-                //convierto el file a bytearray
-                        byte[] filebyte = File.ReadAllBytes(path);
-                //luego a base64 para mandarlo al server
-                        string temp_inBase64 = Convert.ToBase64String(filebyte);
-
-                //lleno mi objeto General dto con la data y el id(opcion del menu)
-                //tambien se puede obj.id="hola"
-
-                        var obj = new GeneralDTO { data = temp_inBase64, id = 1 };
-
-                //Convierto a json ese objeto y luego todo eso a bytearray
-                         var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
-               
-                //Mando byte array
-                int n =  client.Send(sendmsg);
-
-                //alla hago lo inverso para obtener todo
-                //mandamelo asi por opciones en el id para yo saber que funcion quieres hacer
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.ToString());
-                }
-
-                Console.WriteLine("Transmission end.");
-                Console.ReadKey();
-
-            }
-
 
         public static void Commit()
         {
+            Console.WriteLine("Opcion elegida commit");
 
-            try
-            {
-                // Establish the local endpoint for the socket.
-                IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
-                IPAddress ipAddr = ipHost.AddressList[0];
-                IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, 9595);
+            Console.WriteLine("En caso de no habrlo hecho Coloque su archivo en la carpeta Files");
 
-                // Create a TCP socket.
-                Socket client = new Socket(AddressFamily.InterNetwork,
-                        SocketType.Stream, ProtocolType.Tcp);
+            Console.WriteLine("Introduzca el nombre de su archivo(incluyendo extension)");
 
-                // Connect the socket to the remote endpoint.
-                client.Connect(ipEndPoint);
+            string sNameFile = Console.ReadLine();
 
-                // There is a text file test.txt located in the root directory.
-                //  string fileName = "C:\\+test.txt";
-                string fileName = @"C:\Users\Joselyn\Documents\Repositorios\2018\SVM\test.txt";
-                // Send file fileName to remote device
-                Console.WriteLine("Sending {0} to the host.", fileName);
-                client.SendFile(fileName);
 
-                // Release the socket.
-                client.Shutdown(SocketShutdown.Both);
-                client.Close();
-            }
-        catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-            Console.WriteLine("Transmission end.");
+            byte[] data = new byte[10];
+
+            IPHostEntry iphostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            IPAddress ipAdress = iphostInfo.AddressList[0];
+            IPEndPoint ipEndpoint = new IPEndPoint(ipAdress, 9595);
+            Socket client = new Socket(ipAdress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            client.Connect(ipEndpoint);
+
+            string  sNameFiledate = DateTime.Now.ToString("yyyyMMddHHmmss") +sNameFile;
+            string path = GenericFunction.GetExecutingDirectoryName() + sNameFile;
+            Console.WriteLine("Ruta seleccionada: " + path);
+
+
+            byte[] filebyte = File.ReadAllBytes(path);
+
+            string temp_inBase64 = Convert.ToBase64String(filebyte);
+            var obj = new GeneralDTO { data = temp_inBase64, id = 1, nameFile = sNameFiledate};
+            var sendmsg = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(obj));
+
+            Console.WriteLine("Presione una tecla para Confirmar commit");
             Console.ReadKey();
 
+            int n = client.Send(sendmsg);
+            Console.WriteLine("Transmission end.");
+            Console.ReadKey();
         }
 
- 
-
-
     }
-
-    }
+}
 

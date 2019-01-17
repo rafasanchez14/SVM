@@ -49,6 +49,8 @@
     <Compile Include="Model\GeneralDTO.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Util\GenericFunction.cs" />
+    <Compile Include="Util\QuerySqlite.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
