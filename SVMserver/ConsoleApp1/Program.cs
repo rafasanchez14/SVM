@@ -408,10 +408,6 @@ namespace SVM_SA
             {
                 ipList.Add(line);
 
-                
-                Console.WriteLine("There were {0} lines.", counter);
-                // Suspend the screen.  
-                Console.ReadLine();
             }
             file.Close();
             return ipList;
@@ -427,7 +423,7 @@ namespace SVM_SA
                 lrecents.Add(Convert.ToInt64(s.Replace(odata.nameFile,"")));
             }
 
-            sResult = lrecents.Max().ToString() + odata.nameFile;
+            sResult =GenericFunction.GetExecutingDirectoryName()+ lrecents.Max().ToString() + odata.nameFile;
             return sResult;
         }
 
